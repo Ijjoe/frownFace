@@ -6,14 +6,17 @@
 #https://www.kaggle.com/code/yousefr/fish-classifier/notebook
 
 #캐글 fish-classifier 데이터set
+<br/>
 ###https://www.kaggle.com/datasets/crowww/a-large-scale-fish-dataset/data
+<br/>
+<br/>
 
-### 9가지 해산물 유형이 포함
+###9가지 해산물 유형이 포함
 <br/>
-### 금돔, 참돔, 농어, 숭어, 전갱이,흑해 어린애, 줄무늬홍합, 송어, 새우 이미지 샘플
+###금돔, 참돔, 농어, 숭어, 전갱이,흑해 어린애, 줄무늬홍합, 송어, 새우 이미지 샘플
 <br/>
 <br/>
-### 세분화, 특징 추출, 분류 작업을 수행
+###세분화, 특징 추출, 분류 작업을 수행
 <br/>
 ### 공통 분할, 특징 추출 및 분류 알고리즘(의미론적 분할, 컨볼루셔널 신경망, Bag of Feature)을 비교합니다.
 <br/>
