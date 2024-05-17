@@ -91,4 +91,4 @@ class RunCNN:
                 
 
             print('[Epoch: {:>1}] cost = {:>.9}, valid_cost = {:>.9}'.format(epoch + 1, avg_cost, avg_valid_cost))
-            
+        

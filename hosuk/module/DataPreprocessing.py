@@ -23,6 +23,7 @@ class DataPreprocessing:
     def get_label_dic(self):
         return self.__label_dic
 
+
     # 지정 폴더 안 모든 확장자에 대한 파일 찾기
     # param
         # 루트 폴더(str)
@@ -205,11 +206,11 @@ class DataPreprocessing:
         trans_image_arr = []
  
         for file in file_path:
-            f = self.resize_image(file_path[0], img_size) # 리사이즈
+            f = self.resize_image(file, img_size) # 리사이즈
             f = self.padding_image(f, img_size) # 패딩
             np_arr = self.to_numpy_chw(f) # 채널 순서 변경 후 넘파이 어레이 변환
-            np_arr = np_arr / 255 # 0 ~ 1 사이로 정규화
-            np_arr = np.round(np_arr, 4)
+            # np_arr = np_arr / 255 # 0 ~ 1 사이로 스케일링
+            # np_arr = np.round(np_arr, 4)
             trans_image_arr.append(np_arr) # 한장 추가
         
         return torch.Tensor(np.array(trans_image_arr))
@@ -410,3 +411,18 @@ class DataPreprocessing:
             print('[Epoch: {:>1}] cost = {:>.9}, valid_cost = {:>.9}'.format(epoch + 1, avg_cost, avg_valid_cost))
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    
