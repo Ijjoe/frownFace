@@ -9,12 +9,14 @@ class CustomDataset(Dataset):
     # param
         # 데이터셋 파일경로 (list)
         # 인덱싱된 라벨 (list)
-    def __init__(self, file_path, indexed_label):
+        # 조정 사이즈 (int)
+    def __init__(self, file_path, indexed_label, img_size):
         
         self.file_path = file_path
         self.indexed_label = indexed_label
         self.transform = transforms.Compose([transforms.ToTensor()])
         self.dp = data_pp.DataPreprocessing()
+        self.img_size = img_size
 
     
     # 전체 데이터셋 길이
@@ -32,8 +34,8 @@ class CustomDataset(Dataset):
         label = self.indexed_label[idx]
         
         # 사이즈 조정 및 패딩
-        img = self.dp.resize_image(img_path, 256)
-        img = self.dp.padding_image(img, 256)
+        img = self.dp.resize_image(img_path, self.img_size)
+        img = self.dp.padding_image(img, self.img_size)
         
         # 텐서로 변환
         img = self.transform(img)

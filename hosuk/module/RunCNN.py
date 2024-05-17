@@ -61,9 +61,8 @@ class RunCNN:
 
                 X = X.to(device)
                 Y = Y.to(device).long() # 롱타입만 받음
-
-                print(X.shape, Y.shape)
-                print(Y)
+                
+                
 
                 optimizer.zero_grad()
                 hypothesis = model(X)

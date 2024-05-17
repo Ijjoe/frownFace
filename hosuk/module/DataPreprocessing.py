@@ -101,9 +101,9 @@ class DataPreprocessing:
     # 이미지 리사이즈
     # param
         # 이미지 파일 경로 (str)
-        # 최대 이미지 사이즈 (int = 256)
+        # 최대 이미지 사이즈 (int)
     # return : 리사이즈된 PIL open 이미지
-    def resize_image(self, image_file_path, target_size = 256):
+    def resize_image(self, image_file_path, target_size):
     
         image = Image.open(image_file_path)
         
@@ -126,9 +126,9 @@ class DataPreprocessing:
     # 이미지 패딩
     # param
         # 이미지 파일 경로(str)
-        # 최대 이미지 사이즈 (int = 256)
+        # 최대 이미지 사이즈 (int)
     # return : 패딩된 이미지
-    def padding_image(self, image, target_size = 256):
+    def padding_image(self, image, target_size):
         
         # 이미지 사이즈
         h, w = image.size[0], image.size[1]
@@ -201,13 +201,15 @@ class DataPreprocessing:
     # param
         # 이미지 파일 경로 리스트 (list)
     # return : 최종 텐서 (torch Tensor)
-    def make_tensor_arr(self, file_path):
+    def make_tensor_arr(self, file_path, img_size):
         trans_image_arr = []
  
         for file in file_path:
-            f = self.resize_image(file_path[0], 256) # 리사이즈
-            f = self.padding_image(f, 256) # 패딩
+            f = self.resize_image(file_path[0], img_size) # 리사이즈
+            f = self.padding_image(f, img_size) # 패딩
             np_arr = self.to_numpy_chw(f) # 채널 순서 변경 후 넘파이 어레이 변환
+            np_arr = np_arr / 255 # 0 ~ 1 사이로 정규화
+            np_arr = np.round(np_arr, 4)
             trans_image_arr.append(np_arr) # 한장 추가
         
         return torch.Tensor(np.array(trans_image_arr))
@@ -235,6 +237,8 @@ class DataPreprocessing:
     # return : test_set, valid_set, train_set (tuple)
     def split_test_vaild_train(self, file_path, indexed_label, ratio):
 
+        file_path = np.array(file_path)
+        
         # 튜플(path, label) 담을 리스트
         test_lst_X, test_lst_Y = [], []
         valid_lst_X, valid_lst_Y = [], []
@@ -361,7 +365,7 @@ class DataPreprocessing:
         # 모델 (torch model)
         # 러닝 레이트 보폭 (float)
     # return : 없음
-    def run_epoch(self, train_X, train_Y, valid_X, valid_Y, training_epochs, device, model, learning_rate):
+    def run_epoch(self, train_X, train_Y, valid_X, valid_Y, training_epochs, device, model, learning_rate, img_size):
         
         criterion = torch.nn.CrossEntropyLoss().to(device) 
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -373,22 +377,19 @@ class DataPreprocessing:
             # 미니 배치 단위로 꺼내오기
             for X, Y in zip(tqdm(train_X), train_Y): 
                 
-                X = self.make_tensor_arr(X)
+                X = self.make_tensor_arr(X, img_size)
                 X = X.to(device)
                 
                 # 라벨은 long 타입만 받아줌
                 Y = torch.Tensor(np.array(Y)).long()
                 Y = Y.to(device)
-
-                print(X.shape, Y.shape)
-                print(Y)
                 
                 optimizer.zero_grad()
                 pred = model(X)
                 cost = criterion(pred, Y)
                 cost.backward()
                 optimizer.step()
-
+                
                 avg_cost += cost / total_batch
             
             # validation
@@ -396,7 +397,7 @@ class DataPreprocessing:
             size = len(valid_Y)
             with torch.no_grad():
                 for x, y in zip(tqdm(valid_X), valid_Y):
-                    x = self.make_tensor_arr(x)
+                    x = self.make_tensor_arr(x, img_size)
                     x = x.to(device)
                     y = torch.Tensor(np.array(y)).long()
                     y = y.to(device)

@@ -8,13 +8,13 @@ class CNN(torch.nn.Module):
         super(CNN, self).__init__()
         
         # 첫번째층
-        # 100, 3, 256, 256
+        # 10, 3, 224, 224
         self.layer1 = torch.nn.Sequential(
             torch.nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
             torch.nn.ReLU(),
             
             # 풀링
-            # 100, 32, 128, 128
+            # 10, 32, 112, 112
             torch.nn.MaxPool2d(kernel_size=2, stride=2))
 
 
@@ -23,7 +23,7 @@ class CNN(torch.nn.Module):
             torch.nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             torch.nn.ReLU(),
             
-            # 100, 64, 64, 64 
+            # 10, 64, 56, 56
             torch.nn.MaxPool2d(kernel_size=2, stride=2))
 
         # 전결합층 64x64x64 inputs -> 9 outputs
