@@ -1,3 +1,13 @@
 https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=154
 어종 검출 API | https://xrai-api.com/page_Vgtu16
 https://www.kaggle.com/code/limjingbin/fine-tuning-googlenet-lr-0-0001-cifar10
+https://velog.io/@heiswicked/%ED%86%A0%EC%B9%98%EC%9D%98-%ED%98%B8%ED%9D%A1-02-CLASSIFICATION
+https://www.gradio.app/
+
+[0] 물고기 크롭 / 
+[0] 이종 물고기 모델비교 /  
+[X] 실패 3%에 대한 이미지 오류 발췌 / 
+[]이미지 출처 / 
+[]이미지 종류보여주기 / 
+[]분류 보여주기 / 
+[]명시적 제목 / 
