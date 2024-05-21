@@ -147,10 +147,6 @@ class DataPreprocessing:
         return pad(image, pad_size, fill = 0)
     
     
-    # 제로 센터링 수행할 trainset의 mean값 계산
-    # param
-        # trainset 주소 정보
-    
     
     # png 이미지 넘파이 변경 후 채널 순서 변경
     # param
@@ -209,8 +205,8 @@ class DataPreprocessing:
             f = self.resize_image(file, img_size) # 리사이즈
             f = self.padding_image(f, img_size) # 패딩
             np_arr = self.to_numpy_chw(f) # 채널 순서 변경 후 넘파이 어레이 변환
-            # np_arr = np_arr / 255 # 0 ~ 1 사이로 스케일링
-            # np_arr = np.round(np_arr, 4)
+            np_arr = np_arr / 255 # 0 ~ 1 사이로 스케일링
+            np_arr = np.round(np_arr, 4)
             trans_image_arr.append(np_arr) # 한장 추가
         
         return torch.Tensor(np.array(trans_image_arr))
@@ -354,25 +350,39 @@ class DataPreprocessing:
             
         return isTrue
     
+              
+    # 모델 저장
+    # param
+        # 모델 (moel.state_dict())
+        # 저장 경로 (str)
+    def save_model(self, model, path): 
+        path = path 
+        torch.save(model.state_dict(), path) 
+    
     
     # 학습 진행
     # param
-        # train 배치별 이미지 경로 (list)
-        # train 인덱싱된 라벨 (list)
-        # valid 배치별 이미지 경로 (list)
-        # valid 인덱싱된 라벨 (list)
+        # train 배치별 이미지 경로 (2차원 list)
+        # train 인덱싱된 라벨 (1차원 list)
+        # valid 배치별 이미지 경로 (2차원 list)
+        # valid 인덱싱된 라벨 (1차원 list)
         # 에폭 횟수 (int)
-        # gpu선택 (str)
+        # gpu선택 디바이스 (str)
         # 모델 (torch model)
         # 러닝 레이트 보폭 (float)
+        # 모델 저장 위치 (str)
     # return : 없음
-    def run_epoch(self, train_X, train_Y, valid_X, valid_Y, training_epochs, device, model, learning_rate, img_size):
+    def run_epoch(self, train_X, train_Y, valid_X, valid_Y, training_epochs, device, model, learning_rate, img_size, save_path):
         
         criterion = torch.nn.CrossEntropyLoss().to(device) 
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         total_batch = len(train_X)
+        best_accuracy = 0
         
+        # training            
+        model.train() # 훈련모드 전환
         for epoch in range(training_epochs):
+            
             avg_cost = 0
 
             # 미니 배치 단위로 꺼내오기
@@ -385,18 +395,23 @@ class DataPreprocessing:
                 Y = torch.Tensor(np.array(Y)).long()
                 Y = Y.to(device)
                 
-                optimizer.zero_grad()
-                pred = model(X)
-                cost = criterion(pred, Y)
-                cost.backward()
-                optimizer.step()
-                
-                avg_cost += cost / total_batch
+                optimizer.zero_grad() # 그레디언트 초기화
+                pred = model(X) # 모델 적용
+                cost = criterion(pred, Y) # 손실함수 측정
+                cost.backward() # 역전파
+                optimizer.step() # 경사 하강
+                avg_cost += cost / total_batch # 1 epoch당 평균 코스트
             
             # validation
             avg_valid_cost = 0
             size = len(valid_Y)
+            # 개별 이미지 갯수
+            # 배치로 묶여 있으면 batch_size * batch갯수)
+            # 배치 사이즈와 갯수를 인자로 받지 않을 경우 별도로 계산필요
+            image_count = 0 
+            accuracy = 0 # 정확도 계산용
             with torch.no_grad():
+                model.eval() # 검증모드 전환
                 for x, y in zip(tqdm(valid_X), valid_Y):
                     x = self.make_tensor_arr(x, img_size)
                     x = x.to(device)
@@ -405,17 +420,77 @@ class DataPreprocessing:
                     
                     pred = model(x)
                     valid_cost = criterion(pred, y)
+                    avg_valid_cost += valid_cost / size # 평균 코스트
                     
-                    avg_valid_cost += valid_cost / size
+                    # 모델에서 나온 확률중 가장 높은 인덱스 추출
+                    # max 값과 인덱스 튜플 반환
+                    # valid를 배치 사이즈만큼 나눠서 넣는다면 배열로 나옴
+                    pred_value, pred_index = torch.max(pred, 1)
+                    
+                    # y가 한번에 10개 들어오면 (10, size, size)이므로 size(0) = 10 (이미지 10장)
+                    image_count += y.size(0)
+                    
+                    # 예측값과 실제값이 맞는 갯수를 추가
+                    accuracy += (pred_index == y).sum().item()
+            
+            print(f'Epoch: {epoch + 1}, cost = {avg_cost:.9f}, valid_cost = {avg_valid_cost:.9f}')
+            
+            accuracy_ratio = accuracy / image_count
+            print(f"validation = 일치 : {accuracy}/{image_count}, 정확도 : {accuracy_ratio:.9f}")   
+            
+            if accuracy_ratio * 100 > best_accuracy:
+                self.save_model(model, save_path)
+                best_accuracy = accuracy_ratio * 100
+                print("모델 저장완료")
                 
-            print('[Epoch: {:>1}] cost = {:>.9}, valid_cost = {:>.9}'.format(epoch + 1, avg_cost, avg_valid_cost))
+            
         
+    # 세이브 모델 로딩 (파라미터만)
+    # param
+        # 모델 (해당 모델 객체)
+        # 불러올 경로 (str)
+    # return : 모델
+    def load_model(self, model, path):
+        model.load_state_dict(torch.load(path))
+        return model
+
+
+    # 모델 최종 테스트
+    # param
+        # 테스트 이미지 경로 파일 리스트 (2차원 list)
+        # 테스트 타겟 (1차원 list)
+        # 모델
+        # 이미지 사이즈
+    def test_model(self, test_X, test_Y, device, model, img_size):
         
+        model = model.to(device)
+        accuracy = 0
+        image_count = 0
         
+        with torch.no_grad():
+            for x, y in zip(tqdm(test_X), test_Y):
+                x = self.make_tensor_arr(x, img_size)
+                x = x.to(device)
+                y = torch.Tensor(np.array(y)).long()
+                y = y.to(device)
+                
+                pred = model(x)
+                
+                # 모델에서 나온 확률중 가장 높은 인덱스 추출
+                # max 값과 인덱스 튜플 반환
+                # test를 배치 사이즈만큼 나눠서 넣는다면 배열로 나옴
+                pred_value, pred_index = torch.max(pred, 1)
+                
+                # y가 한번에 10개 들어오면 (10, size, size)이므로 size(0) = 10 (이미지 10장)
+                image_count += y.size(0)
+                
+                # 예측값과 실제값이 맞는 갯수를 추가
+                accuracy += (pred_index == y).sum().item()
         
-        
-        
-        
+        print(f"일치 : {accuracy} / {image_count}, {accuracy / image_count:.9f}") 
+                
+
+                
         
         
         
