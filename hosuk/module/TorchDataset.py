@@ -33,7 +33,6 @@ class TorchDataset(Dataset):
     # return : 전체 파일경로(list), 폴더명(라벨, list)
     def get_file_path(self, extension):
 
-        #
         self.root_folder = self.root_folder + "**\\**." + extension
         file_list = glob(self.root_folder, recursive=True)
 
@@ -45,7 +44,7 @@ class TorchDataset(Dataset):
             split_path = path.split("\\")
             folder_name = split_path[-2]
             
-            if folder_name.split()[-1] != "GT":
+            if folder_name.split()[-1] != "GT" and folder_name != "etc":
                 file_path.append(path)
 
                 # 오타로 인한 다른 폴더 이름 동일하게 처리
@@ -66,8 +65,8 @@ class TorchDataset(Dataset):
     def label_indexing(self, target_list):
 
         # 인덱스 딕셔너리 만들기        
-        s = set(target_list)
-        self.label_dict = {label : i for i, label in enumerate(sorted(list(s)))}
+        self.s = set(target_list)
+        self.label_dict = {label : i for i, label in enumerate(sorted(list(self.s)))}
         
         # 인덱싱된 라벨 리스트 만들기
         indexed_label = [self.label_dict[target] for target in target_list]
@@ -155,8 +154,20 @@ class TorchDataset(Dataset):
         plt.show()
     
     
-    def get_target_ratio(self):
-        pass
+    # 비율 바 데이터 만들기
+    def get_target_ratio(self, title):
+
+        target_kind = sorted(list(self.s))
+        target_count = []
+        for kind in target_kind:
+            count = self.target.count(kind)
+            target_count.append(count)
+        plt.figure(figsize = (3, 3))
+        plt.bar(target_kind, target_count, color = ["r", "g"])
+        plt.title(title)
+        plt.xlabel('Target')
+        plt.ylabel('Count')
+        plt.show()
     
     
     # 전체 데이터셋 길이

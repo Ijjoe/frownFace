@@ -72,13 +72,14 @@ class TorchDatasetCNN:
         criterion = torch.nn.CrossEntropyLoss().to(device)    
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         total_batch = len(train_dataloader)
-        best_accuracy = 0
+        best_recall = 0
         
         # training            
         model.train() # 훈련모드 전환
         for epoch in range(training_epochs):
             
-            avg_cost = 0
+            avg_cost = 0 # 에폭 당 코스트 계산용
+            tp_sum, fn_sum = 0, 0 # 에폭 당 recall 계산용
 
             # X 미니 배치, Y 레이블.
             for X, Y in tqdm(train_dataloader): 
@@ -128,14 +129,22 @@ class TorchDatasetCNN:
                     # 예측값과 실제값이 맞는 갯수를 추가
                     accuracy += (pred_index == y).sum().item()
                     
+                    # 실제 산불(1) 중 예측이 맞는것(tp)과 틀린것(fn) - racall 계산용
+                    tp_sum += sum([1 for item1, item2 in zip(y, pred_index) if item1 == 1 and item1 == item2])
+                    fn_sum += sum([1 for item1, item2 in zip(y, pred_index) if item1 == 1 and item1 != item2])       
                     
             accuracy_ratio = accuracy / image_count
             print(f'Epoch: {epoch + 1}, cost = {avg_cost:.9f}, valid_cost = {avg_valid_cost:.9f}')
             print(f"validation = 일치 : {accuracy}/{image_count}, 정확도 : {accuracy_ratio:.9f}")   
             
-            if accuracy_ratio * 100 > best_accuracy:
+            # Recall 계산
+            
+            recall = tp_sum / (tp_sum + fn_sum) * 100
+            print(f"tp : {tp_sum}, tn : {fn_sum} / racall : {recall:.2f}")
+            
+            if recall > best_recall:
                 self.save_model(model, save_path)
-                best_accuracy = accuracy_ratio * 100
+                best_recall = recall
                 print("모델 저장완료")
                 
                 
@@ -143,9 +152,10 @@ class TorchDatasetCNN:
     # param
         # 모델 (해당 모델 객체)
         # 불러올 경로 (str)
+        # 디바이스 정보 (str)
     # return : 모델
-    def load_model(self, model, path):
-        model.load_state_dict(torch.load(path))
+    def load_model(self, model, path, device):
+        model.load_state_dict(torch.load(path, map_location=torch.device(device)))
         return model
 
 
@@ -159,6 +169,7 @@ class TorchDatasetCNN:
         model = model.to(device)
         accuracy = 0
         image_count = 0
+        tp_sum, fn_sum = 0, 0
         
         with torch.no_grad():
             for x, y in tqdm(test_dataloader):
@@ -178,6 +189,14 @@ class TorchDatasetCNN:
                 
                 # 예측값과 실제값이 맞는 갯수를 추가
                 accuracy += (pred_index == y).sum().item()
-        
-        print(f"일치 : {accuracy} / {image_count}, 정확도 : {accuracy / image_count:.9f}") 
                 
+                # 실제 산불(1) 중 예측이 맞는것(tp)과 틀린것(fn) - racall 계산용
+                tp_sum += sum([1 for item1, item2 in zip(y, pred_index) if item1 == 1 and item1 == item2])
+                fn_sum += sum([1 for item1, item2 in zip(y, pred_index) if item1 == 1 and item1 != item2])       
+   
+                
+        print(f"일치 : {accuracy} / {image_count}, 정확도 : {accuracy / image_count:.9f}") 
+ 
+        # Recall 계산
+        recall = tp_sum / (tp_sum + fn_sum) * 100
+        print(f"tp : {tp_sum}, tn : {fn_sum} / racall : {recall:.2f}")                

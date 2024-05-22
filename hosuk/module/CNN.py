@@ -41,26 +41,57 @@ class CNN(torch.nn.Module):
             torch.nn.MaxPool2d(kernel_size=2, stride=2))
 
         img_size = int(img_size/2) # 풀링 후 이미지 사이즈
-
-
-        # 네 번째 층 (FC)
+        
+        
+        # 네번째층 (Conv)
         self.layer4 = torch.nn.Sequential(
+        
+            torch.nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
             
-            torch.nn.Linear(128 * img_size * img_size, 1000, bias = True),
+            torch.nn.MaxPool2d(kernel_size=2, stride=2))
+
+        img_size = int(img_size/2) # 풀링 후 이미지 사이즈
+        
+        
+        # 다섯번째층 (Conv)
+        self.layer5 = torch.nn.Sequential(
+        
+            torch.nn.Conv2d(256, 518, kernel_size=3, stride=1, padding=1),
+            torch.nn.ReLU(),
+            
+            torch.nn.MaxPool2d(kernel_size=2, stride=2))
+
+        img_size = int(img_size/2) # 풀링 후 이미지 사이즈
+
+
+        # 여섯 번째 층 (FC)
+        self.layer6 = torch.nn.Sequential(
+            
+            torch.nn.Linear(518 * img_size * img_size, 5000, bias = True),
             torch.nn.ReLU()
         )
         
         
-        # 다섯번째 층 (FC)
-        self.layer5 = torch.nn.Sequential(
+        # 일곱번째 층 (FC)
+        self.layer7 = torch.nn.Sequential(
+            
+            torch.nn.Linear(5000, 1000, bias = True),
+            torch.nn.ReLU()
+        )
+        
+        
+        # 여덟번째 층 (FC)
+        self.layer8 = torch.nn.Sequential(
             
             torch.nn.Linear(1000, 50, bias = True),
             torch.nn.ReLU()
         )
 
 
-        # 아웃풋 레이어
+        # 아홉번째 층 아웃풋 레이어
         self.fc = torch.nn.Linear(50, 2, bias=True)
+
 
         # 아웃풋 레이어 한정으로 가중치 초기화
         torch.nn.init.xavier_uniform_(self.fc.weight)
@@ -71,8 +102,11 @@ class CNN(torch.nn.Module):
         out = self.layer1(x)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = out.view(out.size(0), -1) # 전결합층을 위해서 Flatten
         out = self.layer4(out)
         out = self.layer5(out)
+        out = out.view(out.size(0), -1) # 전결합층을 위해서 Flatten
+        out = self.layer6(out)
+        out = self.layer7(out)
+        out = self.layer8(out)
         out = self.fc(out)
         return out
