@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-
+ 
 class inception_module(nn.Module):
     def __init__(self
                  ,in_channels: int

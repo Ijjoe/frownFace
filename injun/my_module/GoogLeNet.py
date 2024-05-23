@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch import Tensor
 from typing import Optional
 from my_module.inception_module import inception_module
-
+ 
 class googlenet(nn.Module):
     def __init__(self
                  ,num_classes: int = 1000
