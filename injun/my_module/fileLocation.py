@@ -3,7 +3,7 @@ from glob import glob
 import os
 
 
-# FileLocation.py
+#FileLocation.py
 class FileLocation:
     def __init__(self):
         self.result = 0
