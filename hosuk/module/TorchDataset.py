@@ -13,35 +13,42 @@ class TorchDataset(Dataset):
         # 데이터셋 루트 폴더 경로 (str)
         # 찾을 확장자명
         # 조정 사이즈 (int)
-    def __init__(self, root_folder, extension, img_size):
+        # test셋 구분 여부
+    def __init__(self, root_folder, sep, extension, img_size, phase):
         
         self.img_size = img_size
+        self.pahse = phase
         
         # 루트 폴더에서 
-        self.root_folder = root_folder
-        self.file_path, self.target = self.get_file_path(extension)
+        self.file_path, self.target = self.get_file_path(root_folder, sep, extension)
         self.indexed_label = self.label_indexing(self.target) # 라벨 인덱싱
         
         # 이미지 사이즈 변환
         # resize의 경우 인자를 하나만 넣어야 비율에 맞춰서 변환해줌
-        self.transform = transforms.Compose([transforms.ToTensor()])
+        self.transform = None
+        
+        if self.pahse == "train":
+            self.transform = transforms.Compose([transforms.ToTensor()])
+        elif self.pahse == "test":
+            self.transform = transforms.Compose(
+                [transforms.ToTensor()])
         
 
     # 루트폴더에서 파일 리스트(X), 라벨(Target) 가져오기
     # param
         # 찾을 파일 확장자명 (str)
     # return : 전체 파일경로(list), 폴더명(라벨, list)
-    def get_file_path(self, extension):
+    def get_file_path(self, root_folder, sep, extension):
 
-        self.root_folder = self.root_folder + "**\\**." + extension
-        file_list = glob(self.root_folder, recursive=True)
+        root_folder = root_folder + f"**{sep}**." + extension
+        file_list = glob(root_folder, recursive=True)
 
         file_path = []
         target = []
 
         for path in file_list:
             
-            split_path = path.split("\\")
+            split_path = path.split(f"{sep}")
             folder_name = split_path[-2]
             
             if folder_name.split()[-1] != "GT" and folder_name != "etc":
