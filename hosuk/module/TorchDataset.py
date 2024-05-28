@@ -5,6 +5,7 @@ from PIL import Image
 from torchvision.transforms.functional import pad
 import matplotlib.pyplot as plt
 import random
+import numpy as np
 
 # 라이브러리 사용해서 커스텀 데이터셋 만들기
 class TorchDataset(Dataset):
@@ -14,13 +15,14 @@ class TorchDataset(Dataset):
         # 찾을 확장자명
         # 조정 사이즈 (int)
         # test셋 구분 여부
-    def __init__(self, root_folder, sep, extension, img_size, phase):
+        # etc 폴더에서 가져올지 아닐지 결정 (히든 테스트셋, bool)
+    def __init__(self, root_folder, sep, extension, img_size, phase, etc):
         
         self.img_size = img_size
         self.pahse = phase
         
         # 루트 폴더에서 
-        self.file_path, self.target = self.get_file_path(root_folder, sep, extension)
+        self.file_path, self.target = self.get_file_path(root_folder, sep, extension, etc)
         self.indexed_label = self.label_indexing(self.target) # 라벨 인덱싱
         
         # 이미지 사이즈 변환
@@ -36,12 +38,18 @@ class TorchDataset(Dataset):
 
     # 루트폴더에서 파일 리스트(X), 라벨(Target) 가져오기
     # param
+        # 찾아올 루트 폴더 (str)
+        # os별 경로 구분자 (str)
         # 찾을 파일 확장자명 (str)
+        # etc 폴더에서 가져올지 아닐지 결정 (히든 테스트셋 등 : bool)
     # return : 전체 파일경로(list), 폴더명(라벨, list)
-    def get_file_path(self, root_folder, sep, extension):
+    def get_file_path(self, root_folder, sep, extension, isEtc):
 
-        root_folder = root_folder + f"**{sep}**." + extension
-        file_list = glob(root_folder, recursive=True)
+        root_folder1 = root_folder + f"**{sep}**." + extension[0]
+        file_list = glob(root_folder1, recursive=True)
+        root_folder2 = root_folder + f"**{sep}**." + extension[1]
+        file_list.extend(glob(root_folder2, recursive=True))
+        
 
         file_path = []
         target = []
@@ -51,15 +59,15 @@ class TorchDataset(Dataset):
             split_path = path.split(f"{sep}")
             folder_name = split_path[-2]
             
-            if folder_name.split()[-1] != "GT" and folder_name != "etc":
-                file_path.append(path)
-
-                # 오타로 인한 다른 폴더 이름 동일하게 처리
-                if folder_name == "Gilt Head Bream":
-                    folder_name = "Gilt-Head Bream"
-                elif folder_name == "Horse Mackerel":
-                    folder_name = "Hourse Mackerel"
+            if isEtc == False:
                 
+                # etc가 포함돼 있지 않은 파일정보만 추가
+                if path.count("etc") == 0:
+                    file_path.append(path)
+                    target.append(folder_name)
+            else:
+                # 폴더 안에 있는 경로 모두 추가
+                file_path.append(path)
                 target.append(folder_name)
                 
         return file_path, target  
@@ -96,6 +104,7 @@ class TorchDataset(Dataset):
     
         image = Image.open(image_file_path)
         
+       
         # 원본 이미지의 가로(행), 세로(열) 길이
         origin_h, origin_w = image.size[0], image.size[1]
         
@@ -194,6 +203,12 @@ class TorchDataset(Dataset):
         
         img = self.resize_image(img_path) # 리사이즈
         img = self.padding_image(img) # 패딩
+        
+        # 4차원 png일 경우 3차원으로 축소
+        img = np.array(img)
+        if img.shape[2] == 4:
+            img = img[:, :, :3]
+        
         img = self.transform(img) # 스케일링 및 텐서변환
         
         return img, label

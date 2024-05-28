@@ -76,6 +76,7 @@ class TorchDatasetCNN:
         total_batch = len(train_dataloader)
         train_image_count = total_batch * train_dataloader.batch_size # 전체 이미지 갯수
         best_recall = 0
+        best_accuracy = 0
         train_acc, valid_acc, valid_recall = [], [], [] # 에폭마다 저장 (그래프용)
          
         # training            
@@ -154,11 +155,18 @@ class TorchDatasetCNN:
             valid_recall.append(recall)
             print(f"리콜 = tp : {tp_sum}, fn : {fn_sum} / racall : {recall:.2f}")
             
+                        
             # 리콜 기준으로 모델 저장
             if recall > best_recall:
                 self.save_model(model, save_path)
                 best_recall = recall
                 print("모델 저장완료")
+            
+            # # 정확도 기준으로 모델 저장
+            # if valid_accuracy > best_accuracy:
+            #     self.save_model(model, save_path)
+            #     best_accuracy = valid_accuracy
+            #     print("모델 저장완료")
 
         # 결과 그래프 그리기                
         self.make_result_graph(train_acc, valid_acc, valid_recall)

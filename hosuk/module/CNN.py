@@ -64,5 +64,3 @@ class CNN(torch.nn.Module):
         out = self.header(out)
         out = self.fc(out)
         return out
-    
-    
